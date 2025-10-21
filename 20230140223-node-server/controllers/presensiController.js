@@ -1,6 +1,5 @@
 const presensiRecords = require("../data/presensiData"); // Import data presensi dari data/presensiData.js
 const{ format } = require("date-fns-tz"); // Import format dari date-fns-tz untuk format tanggal dengan zona waktu
-const { checkout } = require("../routes/books");
 const timeZone = 'Asia/Jakarta'; // Zona waktu yang diinginkan
 
 exports.CheckIn = (req, res) => { // Fungsi untuk handle check-in
@@ -58,11 +57,11 @@ exports.CheckOut = (req, res) => { // Fungsi untuk handle check-out
     const formattedData = { // Format data untuk respons
         ...recordToUpdate, // Salin semua properti dari recordToUpdate
         checkIn: format(recordToUpdate.checkIn, 'yyyy-MM-dd HH:mm:ssXXX', { timeZone }), // Format waktu check-in
-        checkout: format(recordToUpdate.checkOut, 'yyyy-MM-dd HH:mm:ssXXX', { timeZone }), // Format waktu check-out
+        checkOut: format(recordToUpdate.checkOut, 'yyyy-MM-dd HH:mm:ssXXX', { timeZone }), // Format waktu check-out
     };
 
     console.log( // Log data terupdate
-        `DATA TERUPDATE: Karyawan ${userName} (ID: ${userId}) melakukan check-out pada ${formattedData.checkout}` // Log data terupdate
+        `DATA TERUPDATE: Karyawan ${userName} (ID: ${userId}) melakukan check-out pada ${formattedData.checkOut}` // Log data terupdate
     );
 
     res.json({ // Kirim respons sukses
