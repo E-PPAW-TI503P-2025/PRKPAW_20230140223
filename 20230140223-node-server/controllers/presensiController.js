@@ -73,4 +73,4 @@ exports.CheckOut = (req, res) => { // Fungsi untuk handle check-out
         )} WIB`, // Pesan sukses
         data: formattedData, // Sertakan data presensi yang sudah diformat
     });
-}
+};
