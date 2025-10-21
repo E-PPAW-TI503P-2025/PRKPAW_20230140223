@@ -4,7 +4,7 @@
 
 **Irfansyah**
 **NIM:** 20230140223
-**Kelas:** TI-5A (PAW – E-PPAW-TI503P-2025)
+**Kelas:** TI-5E (PAW – E-PPAW-TI503P-2025)
 
 ---
 
