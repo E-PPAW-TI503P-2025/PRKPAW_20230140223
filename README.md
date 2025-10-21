@@ -1,4 +1,4 @@
-## **Tugas 2 – CRUD Express.js dengan Middleware & Error Handling**
+# **Tugas 2 – RESTful API Presensi & Report dengan Express.js**
 
 ### **Nama Mahasiswa**
 
@@ -8,121 +8,143 @@
 
 ---
 
-### **Deskripsi Proyek**
+## **Deskripsi Proyek**
 
-Tugas ini merupakan kelanjutan dari praktikum **Pengembangan Aplikasi Web (PAW)** yang bertujuan untuk:
+Tugas ini merupakan lanjutan dari praktikum **Pengembangan Aplikasi Web (PAW)** yang berfokus pada:
 
-* Mempelajari pembuatan **RESTful API** dengan **Express.js**
-* Mengimplementasikan fitur **CRUD (Create, Read, Update, Delete)** untuk manajemen data buku
-* Menerapkan **middleware** untuk logging aktivitas server
-* Menambahkan **error handling** agar API lebih stabil dan profesional
+* Implementasi **routing** dan **middleware** di Express.js
+* Pembuatan **RESTful API** sederhana untuk fitur **Presensi Karyawan**
+* Simulasi **role-based access (admin vs karyawan)** menggunakan middleware
+* Penambahan **logging, error handling**, dan struktur aplikasi modular
+
+Aplikasi ini menjalankan dua fitur utama:
+
+1. **Presensi Karyawan** (Check-In & Check-Out)
+2. **Laporan Harian (Report)** — hanya dapat diakses oleh **admin**
 
 ---
 
-### **Langkah Menjalankan Proyek**
+## **Langkah Menjalankan Proyek**
 
-1. Buka terminal pada folder `express-demo`
-
-2. Jalankan perintah berikut:
+1. Buka terminal di folder:
 
    ```bash
-   npm install
-   node app.js
+   cd 20230140223-node-server
    ```
 
-3. Server akan berjalan di:
+2. Install dependencies:
+
+   ```bash
+   npm install express cors morgan date-fns-tz
+   ```
+
+3. Jalankan server:
+
+   ```bash
+   node server.js
+   ```
+
+4. Akses API di browser atau Postman:
 
    ```
-   http://localhost:3000/
+   http://localhost:3001/
    ```
-
-4. Uji semua endpoint menggunakan **Postman** atau **cURL**
 
 ---
 
-### **Daftar Endpoint API**
+## **Daftar Endpoint API**
 
-| HTTP Method | Endpoint         | Deskripsi                       | Body (JSON)                                                |
-| ----------- | ---------------- | ------------------------------- | ---------------------------------------------------------- |
-| **GET**     | `/api/books`     | Menampilkan semua buku          | –                                                          |
-| **GET**     | `/api/books/:id` | Menampilkan buku berdasarkan ID | –                                                          |
-| **POST**    | `/api/books`     | Menambahkan buku baru           | `{ "title": "Book Title", "author": "Author Name" }`       |
-| **PUT**     | `/api/books/:id` | Memperbarui data buku           | `{ "title": "Updated Title", "author": "Updated Author" }` |
-| **DELETE**  | `/api/books/:id` | Menghapus buku berdasarkan ID   | –                                                          |
+### **Presensi (Karyawan)**
 
----
+| HTTP Method | Endpoint                  | Deskripsi                         | Body (JSON) |
+| ----------- | ------------------------- | --------------------------------- | ----------- |
+| **POST**    | `/api/presensi/check-in`  | Menandai waktu masuk (check-in)   | –           |
+| **POST**    | `/api/presensi/check-out` | Menandai waktu keluar (check-out) | –           |
 
-### **Contoh Respons API**
-
-#### GET `/api/books`
-
-```json
-[
-  { "id": 1, "title": "Laskar Pelangi", "author": "Andrea Hirata" },
-  { "id": 2, "title": "Bumi Manusia", "author": "Pramoedya Ananta Toer" }
-]
-```
-
-#### POST `/api/books`
+**Contoh Respons – Check-In**
 
 ```json
 {
-  "message": "Book created successfully",
+  "message": "Halo User Karyawan, check-in Anda berhasil pada pukul 08:05:00 WIB",
   "data": {
-    "id": 3,
-    "title": "Negeri 5 Menara",
-    "author": "Ahmad Fuadi"
+    "userId": 123,
+    "nama": "User Karyawan",
+    "checkIn": "2025-10-21 08:05:00",
+    "checkOut": null
   }
 }
 ```
 
-#### PUT `/api/books/2`
+**Contoh Respons – Check-Out**
 
 ```json
 {
-  "message": "Book updated successfully",
+  "message": "Selamat jalan User Karyawan, check-out Anda berhasil pada pukul 17:01:00 WIB",
   "data": {
-    "id": 2,
-    "title": "Bumi Manusia (Revisi)",
-    "author": "Pramoedya Ananta Toer"
-  }
-}
-```
-
-#### DELETE `/api/books/1`
-
-```json
-{
-  "message": "Book deleted successfully",
-  "data": {
-    "id": 1,
-    "title": "Laskar Pelangi",
-    "author": "Andrea Hirata"
+    "userId": 123,
+    "nama": "User Karyawan",
+    "checkIn": "2025-10-21 08:05:00+07:00",
+    "checkOut": "2025-10-21 17:01:00+07:00"
   }
 }
 ```
 
 ---
 
-### **Middleware yang Digunakan**
+### **Laporan (Admin)**
 
-#### 1. **Body Parser**
+| HTTP Method | Endpoint             | Deskripsi                           | Hak Akses      |
+| ----------- | -------------------- | ----------------------------------- | -------------- |
+| **GET**     | `/api/reports/daily` | Mendapatkan laporan harian presensi | **Admin Only** |
 
-```js
-app.use(express.json());
+**Contoh Respons**
+
+```json
+{
+  "status": "success",
+  "message": "Laporan harian berhasil diambil",
+  "reportDate": "Selasa, 21 Oktober 2025 19.35",
+  "totalRecords": 2,
+  "data": [
+    {
+      "userId": 123,
+      "nama": "User Karyawan",
+      "checkIn": "2025-10-21T08:05:00.000Z",
+      "checkOut": "2025-10-21T17:01:00.000Z"
+    }
+  ]
+}
 ```
 
-Memungkinkan server membaca body request berformat JSON.
+---
 
-#### 2. **CORS**
+## **Middleware yang Digunakan**
+
+### **1. `cors`**
 
 ```js
 app.use(cors());
 ```
 
-Mengizinkan akses API dari domain lain (misalnya frontend React).
+→ Mengizinkan API diakses dari domain lain (misalnya frontend React).
 
-#### 3. **Logger Custom**
+### **2. `express.json()`**
+
+```js
+app.use(express.json());
+```
+
+→ Memungkinkan server membaca body berformat JSON.
+
+### **3. `morgan('dev')`**
+
+```js
+app.use(morgan('dev'));
+```
+
+→ Mencatat aktivitas request otomatis ke console.
+
+### **4. Logging Custom**
 
 ```js
 app.use((req, res, next) => {
@@ -131,25 +153,30 @@ app.use((req, res, next) => {
 });
 ```
 
-Menampilkan timestamp, method, dan URL dari setiap request.
+→ Menampilkan waktu, method, dan URL setiap request secara manual.
+
+### **5. `permisionMiddleware.js`**
+
+```js
+exports.addUserData = (req, res, next) => { ... }
+exports.isAdmin = (req, res, next) => { ... }
+```
+
+→ Menyediakan **user dummy** dan memeriksa **role** sebelum akses endpoint.
 
 ---
 
-### **Error Handling**
+## **Error Handling**
 
-#### 404 Middleware
-
-Menangani URL yang tidak ditemukan:
+### **404 – Not Found**
 
 ```js
-app.use((req, res, next) => {
+app.use((req, res) => {
   res.status(404).json({ message: 'Endpoint Not Found' });
 });
 ```
 
-#### Global Error Handler
-
-Menangani kesalahan internal server:
+### **Global Error Handler**
 
 ```js
 app.use((err, req, res, next) => {
@@ -160,29 +187,34 @@ app.use((err, req, res, next) => {
 
 ---
 
-### **Commit Log**
+## **Fitur Utama**
+
+* Presensi Check-In & Check-Out
+* Report Harian hanya untuk Admin
+* Middleware Role-Based Access
+* Logging Otomatis & Manual
+* Format Waktu WIB dengan `date-fns-tz`
+* Struktur Modular (Controllers, Routes, Middleware)
+
+---
+
+## **Commit Log**
 
 ```bash
-git add express-demo TUGAS
-git commit -m "Menambahkan tugas kedua: folder express-demo (CRUD Express.js lengkap) dan folder TUGAS (dokumentasi endpoint praktikum PAW)"
+git add .
+git commit -m "Add RESTful API Presensi & Report dengan Middleware, Logging, dan Error Handling"
 git push origin main
 ```
 
 ---
 
-### **Status Tugas**
+## **🏫 Catatan Akhir**
 
-- CRUD API Berfungsi
-- Middleware Logging
-- Error Handling
-- Dokumentasi Markdown
-- Struktur Folder Sesuai Format Praktikum
-- Sudah Diuji di Postman
+Proyek ini merupakan bagian dari praktikum **Pengembangan Aplikasi Web (PAW)**
+pada **Universitas Muhammadiyah Yogyakarta**
+dengan fokus pada pemahaman:
+
+> **Routing – Middleware – Error Handling – RESTful API Development menggunakan Express.js**
 
 ---
 
-### **Catatan Akhir**
-
-Project ini merupakan bagian dari praktikum **Pengembangan Aplikasi Web (PAW)**
-pada **Universitas Muhammadiyah Yogyakarta**
-dengan fokus pada pemahaman **Express.js, REST API, dan Middleware Handling**.
