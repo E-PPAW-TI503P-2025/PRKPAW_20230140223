@@ -2,7 +2,7 @@ const presensiRecords = [ // Data dummy presensi
     {
         userId: 456, // ID unik untuk user karyawan
         nama: 'User Karyawan', // Nama karyawan
-        chekIn: new Date('2025-10-14T08:05:00'), // Waktu check-in
+        checkIn: new Date('2025-10-14T08:05:00'), // Waktu check-in
         checkOut: new Date('2025-10-14T17:00:00'), // Waktu check-out
     }
 ];
