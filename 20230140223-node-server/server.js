@@ -1,7 +1,7 @@
 const express = require('express'); // Import express
 const cors = require('cors'); // Import cors untuk mengizinkan request dari browser
 const app = express(); // Buat aplikasi express
-const port = 3001; // Tentukan port server
+const port = 3308; // Tentukan port server
 const morgan = require('morgan'); // Import morgan untuk logging request
 
 const presensiRoutes = require('./routes/presensi'); // Import routes presensi
