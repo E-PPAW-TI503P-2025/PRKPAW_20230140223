@@ -11,3 +11,6 @@
 
 ## 4. Screenshot database setelah presensi checkout.
 ![database presensi checkout](image14.png)
+
+## 5. Screenshot endpoint report.
+![endpoint report](image15.png)
