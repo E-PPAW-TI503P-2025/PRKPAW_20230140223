@@ -101,7 +101,7 @@ exports.deletePresensi = async (req, res) => {
         .json({ message: "Anda tidak berhak menghapus data ini." });
     }
     await recordToDelete.destroy();
-    res.status(204).send();
+    res.status(200).json({ message: "Data presensi berhasil dihapus." });
   } catch (error) {
     res
     .status(500)
