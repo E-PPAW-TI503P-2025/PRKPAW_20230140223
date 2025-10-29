@@ -1,15 +1,14 @@
-// 1. Ganti sumber data dari array ke model Sequelize
 const { Presensi } = require("../models");
 const { format } = require("date-fns-tz");
+const { matchedData } = require("express-validator");
 const timeZone = "Asia/Jakarta";
 
 exports.CheckIn = async (req, res) => {
-  // 2. Gunakan try...catch untuk error handling
+
   try {
     const { id: userId, nama: userName } = req.user;
     const waktuSekarang = new Date();
 
-    // 3. Ubah cara mencari data menggunakan 'findOne' dari Sequelize
     const existingRecord = await Presensi.findOne({
       where: { userId: userId, checkOut: null },
     });
@@ -20,7 +19,6 @@ exports.CheckIn = async (req, res) => {
         .json({ message: "Anda sudah melakukan check-in hari ini." });
     }
 
-    // 4. Ubah cara membuat data baru menggunakan 'create' dari Sequelize
     const newRecord = await Presensi.create({
       userId: userId,
       nama: userName,
@@ -48,12 +46,11 @@ exports.CheckIn = async (req, res) => {
 };
 
 exports.CheckOut = async (req, res) => {
-  // Gunakan try...catch
+
   try {
     const { id: userId, nama: userName } = req.user;
     const waktuSekarang = new Date();
 
-    // Cari data di database
     const recordToUpdate = await Presensi.findOne({
       where: { userId: userId, checkOut: null },
     });
@@ -64,7 +61,6 @@ exports.CheckOut = async (req, res) => {
       });
     }
 
-    // 5. Update dan simpan perubahan ke database
     recordToUpdate.checkOut = waktuSekarang;
     await recordToUpdate.save();
 
@@ -116,31 +112,46 @@ exports.deletePresensi = async (req, res) => {
 exports.updatePresensi = async (req, res) => {
   try {
     const presensiId = req.params.id;
-    const { checkIn, checkOut, nama } = req.body;
-    if (checkIn === undefined && checkOut === undefined && nama === undefined) {
-      return res.status(400).json({ 
-        message: 
-        "Tidak ada data yang diberikan untuk diperbarui." 
-      });
+    const data = matchedData(req, { includeOptionals: true });
+    const { waktuCheckIn, waktuCheckOut, nama } = data;
+
+    if (waktuCheckIn == null && waktuCheckOut == null && nama == null) {
+      return res.status(400).json({ message: "Tidak ada data yang diberikan untuk diperbarui." });
     }
+
     const recordToUpdate = await Presensi.findByPk(presensiId);
     if (!recordToUpdate) {
-      return res
-        .status(404)
-        .json({ message: "Catatan presensi tidak ditemukan." });
+      return res.status(404).json({ message: "Catatan presensi tidak ditemukan." });
     }
-    recordToUpdate.checkIn = checkIn || recordToUpdate.checkIn;
-    recordToUpdate.checkOut = checkOut || recordToUpdate.checkOut;
-    recordToUpdate.nama = nama || recordToUpdate.nama;
-    await recordToUpdate.save();
 
-    res.json({
-      message: "Data presensi berhasil diperbarui.",
-      data: recordToUpdate,
-    });
+    const updates = {};
+    if (waktuCheckIn)  updates.checkIn  = new Date(waktuCheckIn);
+    if (waktuCheckOut) updates.checkOut = new Date(waktuCheckOut);
+    if (typeof nama === "string") updates.nama = nama;
+
+    await recordToUpdate.update(updates);
+
+const toWIB = (d) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false
+  }).format(new Date(d)).replace(', ', ' ') + '+07:00';
+
+res.json({
+  message: "Data presensi berhasil diperbarui.",
+  data: {
+    id: recordToUpdate.id,
+    userId: recordToUpdate.userId,
+    nama: recordToUpdate.nama,
+    checkIn:  recordToUpdate.checkIn  ? toWIB(recordToUpdate.checkIn)  : null,
+    checkOut: recordToUpdate.checkOut ? toWIB(recordToUpdate.checkOut) : null,
+    createdAt: toWIB(recordToUpdate.createdAt),
+    updatedAt: toWIB(recordToUpdate.updatedAt),
+  }
+});
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Terjadi kesalahan pada server", error: error.message });
+    res.status(500).json({ message: "Terjadi kesalahan pada server", error: error.message });
   }
 };
