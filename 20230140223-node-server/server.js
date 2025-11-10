@@ -7,6 +7,8 @@ const morgan = require('morgan'); // Import morgan untuk logging request
 const presensiRoutes = require('./routes/presensi'); // Import routes presensi
 const reportRoutes = require('./routes/reports'); // Import routes laporan
 
+const authRoutes = require('./routes/auth'); // Import routes autentikasi
+
 app.use(cors()); // izinkan request dari browser (menghindari CORS)
 app.use(express.json()); // untuk parsing application/json
 app.use(morgan('dev')); // logging request ke console
@@ -22,6 +24,7 @@ app.get('/', (req, res) => { // Route dasar
 
 app.use('/api/presensi', presensiRoutes); // Gunakan routes presensi
 app.use('/api/reports', reportRoutes); // Gunakan routes laporan
+app.use('/api/auth', authRoutes); // Gunakan routes autentikasi
 
 app.listen(port, () => { // Jalankan server
   console.log(`Express server running on http://localhost:${port}`); // Log URL server
