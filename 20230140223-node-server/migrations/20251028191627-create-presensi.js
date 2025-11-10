@@ -12,10 +12,12 @@ module.exports = {
       userId: {
         type: Sequelize.INTEGER,
         allowNull: false,
-      },
-      nama: {
-        type: Sequelize.STRING,
-        allowNull: false,
+        references: {
+          model: 'Users',
+          key: 'id'
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
       },
       checkIn: {
         type: Sequelize.DATE,

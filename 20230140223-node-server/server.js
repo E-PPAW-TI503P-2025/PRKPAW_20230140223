@@ -9,7 +9,10 @@ const reportRoutes = require('./routes/reports'); // Import routes laporan
 
 const authRoutes = require('./routes/auth'); // Import routes autentikasi
 
+const cookieParser = require('cookie-parser');
+
 app.use(cors()); // izinkan request dari browser (menghindari CORS)
+app.use(cookieParser()); // untuk parsing cookie
 app.use(express.json()); // untuk parsing application/json
 app.use(morgan('dev')); // logging request ke console
 
