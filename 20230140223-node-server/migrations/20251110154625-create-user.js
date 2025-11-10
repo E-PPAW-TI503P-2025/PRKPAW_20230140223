@@ -10,7 +10,22 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       nama: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      email: {
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
+      },
+      password: {
+        type: Sequelize.STRING,
+        allowNull: false
+      },
+      role: {
+        type: Sequelize.ENUM('mahasiswa', 'admin'),
+        allowNull: false,
+        defaultValuse: 'mahasiswa'
       },
       createdAt: {
         allowNull: false,
