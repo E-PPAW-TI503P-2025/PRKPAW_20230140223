@@ -178,14 +178,6 @@ function DashboardPage() {
                 </li>
               </ul>
             </div>
-
-            <button
-              onClick={handleLogout}
-              className="w-full rounded-lg bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-xs font-semibold text-slate-50
-                         shadow-lg shadow-red-500/30 transition-colors"
-            >
-              Logout
-            </button>
           </div>
         </aside>
       </main>
