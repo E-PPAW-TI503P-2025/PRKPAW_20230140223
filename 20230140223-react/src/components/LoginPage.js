@@ -1,101 +1,209 @@
 // src/components/LoginPage.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+const API_BASE_URL = 'http://localhost:3308'; // sesuaikan dengan port server Node.js-mu
 
 function LoginPage() {
-  // state untuk menyimpan input user
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // state untuk menyimpan pesan error jika login gagal
-  const [error, setError] = useState(null);
 
-  const navigate = useNavigate(); // hook untuk pindah halaman
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();      // mencegah form submit reload halaman
-    setError(null);          // reset error dulu
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
 
     try {
-      // KIRIM REQUEST KE BACKEND
-      const response = await axios.post(
-        'http://localhost:3308/api/auth/login', // sesuaikan dengan port server Node.js-mu
-        {
-          email: email,
-          password: password,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+        email,
+        password,
+      });
 
-      // ambil token dari respons backend
       const token = response.data.token;
-
-      // simpan token ke localStorage agar tetap ada walau di-refresh
       localStorage.setItem('token', token);
 
-      // setelah login berhasil, arahkan user ke dashboard
       navigate('/dashboard');
     } catch (err) {
-      // kalau server kirim error (status 4xx/5xx)
-      // err.response bisa berisi { message: "..." } dari backend
-      const msg = err.response ? err.response.data.message : 'Login gagal';
+      const msg = err.response?.data?.message || 'Login gagal. Periksa kembali email / password.';
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          Login
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email:
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
+      {/* Top bar */}
+      <header className="w-full px-6 py-4 flex items-center justify-between text-slate-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-bold">
+            PK
           </div>
-
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Password:
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+            <p className="text-sm font-semibold">Presensi Karyawan</p>
+            <p className="text-xs text-slate-300">Full-Stack Attendance System</p>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 text-white font-semibold rounded-md shadow-sm hover:bg-blue-700"
+        <nav className="flex items-center gap-4 text-sm">
+          <Link
+            to="/login"
+            className="font-semibold text-emerald-400 border-b border-emerald-400 pb-0.5"
           >
             Login
-          </button>
-        </form>
+          </Link>
+          <Link
+            to="/register"
+            className="hover:text-emerald-300 transition-colors"
+          >
+            Register
+          </Link>
+        </nav>
+      </header>
 
-        {error && (
-          <p className="text-red-600 text-sm mt-4 text-center">{error}</p>
-        )}
-      </div>
+      {/* Content */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-4xl bg-slate-950/40 border border-slate-800 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden backdrop-blur-lg">
+          <div className="grid md:grid-cols-2 gap-0">
+            {/* Left panel */}
+            <section className="hidden md:flex flex-col justify-between px-10 py-10 bg-gradient-to-br from-emerald-500 via-emerald-400 to-cyan-400 text-slate-900">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em]">
+                  Presensi • Realtime
+                </p>
+                <h1 className="mt-3 text-3xl font-black leading-tight">
+                  Kelola presensi karyawan
+                  <br />
+                  secara modern & aman.
+                </h1>
+
+                <p className="mt-4 text-sm text-slate-900/70">
+                  Login dengan akun terverifikasi untuk mengakses dashboard, monitoring presensi,
+                  dan laporan harian yang terintegrasi dengan API Node.js.
+                </p>
+              </div>
+
+              <ul className="mt-8 space-y-3 text-sm">
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-emerald-300 text-xs font-bold">
+                    1
+                  </span>
+                  <span>
+                    <span className="font-semibold">Autentikasi JWT</span> — token aman untuk
+                    setiap request ke API backend.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-emerald-300 text-xs font-bold">
+                    2
+                  </span>
+                  <span>
+                    <span className="font-semibold">Role based access</span> — beda hak akses
+                    antara admin dan mahasiswa/karyawan.
+                  </span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-emerald-300 text-xs font-bold">
+                    3
+                  </span>
+                  <span>
+                    <span className="font-semibold">Terintegrasi React</span> — SPA dengan
+                    pengalaman yang cepat tanpa full reload.
+                  </span>
+                </li>
+              </ul>
+            </section>
+
+            {/* Right panel – form */}
+            <section className="px-8 py-10 bg-slate-950 text-slate-50 flex flex-col justify-center">
+              <div className="max-w-sm mx-auto w-full">
+                <h2 className="text-2xl font-bold tracking-tight text-slate-50">
+                  Login ke Akun Anda
+                </h2>
+                <p className="mt-2 text-sm text-slate-400">
+                  Masuk menggunakan email dan password yang sudah terdaftar. Token JWT akan
+                  otomatis disimpan di browser.
+                </p>
+
+                <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+                  <div>
+                    <label
+                      htmlFor="email"
+                      className="block text-xs font-semibold uppercase tracking-wide text-slate-300"
+                    >
+                      Email
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm
+                                 text-slate-50 placeholder:text-slate-500
+                                 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="nama@contoh.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="block text-xs font-semibold uppercase tracking-wide text-slate-300"
+                    >
+                      Password
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-900/60 px-3 py-2.5 text-sm
+                                 text-slate-50 placeholder:text-slate-500
+                                 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      placeholder="••••••••"
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-emerald-500 px-4 py-2.5
+                               text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30
+                               hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed
+                               transition-colors"
+                  >
+                    {loading ? 'Memproses...' : 'Login'}
+                  </button>
+                </form>
+
+                <p className="mt-6 text-xs text-slate-400 text-center">
+                  Belum punya akun?{' '}
+                  <Link
+                    to="/register"
+                    className="font-semibold text-emerald-400 hover:text-emerald-300"
+                  >
+                    Daftar sekarang
+                  </Link>
+                </p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

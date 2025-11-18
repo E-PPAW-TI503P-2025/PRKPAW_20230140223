@@ -21,7 +21,7 @@ function RegisterPage() {
     try {
       // Kirim data ke backend
       const response = await axios.post(
-        'http://localhost:3001/api/auth/register',
+        'http://localhost:3308/api/auth/register',
         {
           nama,
           email,
