@@ -3,13 +3,17 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
+const API_BASE_URL = 'http://localhost:3308'; // sesuaikan dengan port server Node.js-mu
+
 function RegisterPage() {
   const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('mahasiswa'); // default
+  const [role, setRole] = useState('mahasiswa');
+
   const [error, setError] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
@@ -17,151 +21,247 @@ function RegisterPage() {
     e.preventDefault();
     setError(null);
     setSuccessMsg(null);
+    setLoading(true);
 
     try {
-      // Kirim data ke backend
-      const response = await axios.post(
-        'http://localhost:3308/api/auth/register',
-        {
-          nama,
-          email,
-          password,
-          role,
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/api/auth/register`, {
+        nama,
+        email,
+        password,
+        role,
+      });
 
-      // Jika sukses
-      setSuccessMsg(response.data.message || 'Registrasi berhasil');
+      setSuccessMsg(response.data.message || 'Registrasi berhasil.');
 
-      // Optional: sedikit delay biar user sempat lihat pesan sukses
       setTimeout(() => {
         navigate('/login');
-      }, 800);
+      }, 900);
     } catch (err) {
-      // Tangani error dari backend
       const msg =
         err.response?.data?.message || 'Registrasi gagal. Silakan coba lagi.';
       setError(msg);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-      <div className="bg-white w-full max-w-md rounded-lg shadow-md p-8">
-        <h2 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          Register Akun Baru
-        </h2>
-
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Nama */}
-          <div>
-            <label
-              htmlFor="nama"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Nama Lengkap
-            </label>
-            <input
-              id="nama"
-              type="text"
-              value={nama}
-              onChange={(e) => setNama(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                         focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Irfansyah"
-            />
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* Top bar */}
+      <header className="w-full px-6 py-4 flex items-center justify-between text-slate-100 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-sm font-bold">
+            PK
           </div>
-
-          {/* Email */}
           <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                         focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="nama@mail.com"
-            />
+            <p className="text-sm font-semibold">Presensi Karyawan</p>
+            <p className="text-xs text-slate-400">Create a new secure account</p>
           </div>
+        </div>
 
-          {/* Password */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                         focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label
-              htmlFor="role"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Role
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                         focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="mahasiswa">Mahasiswa</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-
-          {/* Tombol submit */}
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-green-600 text-white font-semibold
-                       rounded-md shadow-sm hover:bg-green-700
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        <nav className="flex items-center gap-4 text-sm">
+          <Link
+            to="/login"
+            className="hover:text-blue-300 transition-colors"
           >
-            Daftar
-          </button>
-        </form>
-
-        {/* Pesan error / sukses */}
-        {error && (
-          <p className="mt-4 text-sm text-red-600 text-center">{error}</p>
-        )}
-        {successMsg && (
-          <p className="mt-4 text-sm text-green-600 text-center">
-            {successMsg}
-          </p>
-        )}
-
-        {/* Link ke login */}
-        <p className="mt-6 text-sm text-center text-gray-600">
-          Sudah punya akun?{' '}
-          <Link to="/login" className="text-blue-600 hover:underline">
-            Login di sini
+            Login
           </Link>
-        </p>
-      </div>
+          <Link
+            to="/register"
+            className="font-semibold text-blue-400 border-b border-blue-400 pb-0.5"
+          >
+            Register
+          </Link>
+        </nav>
+      </header>
+
+      {/* Content */}
+      <main className="flex-1 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-5xl grid lg:grid-cols-[1.1fr,1fr] gap-10">
+          {/* Text / benefits */}
+          <section className="hidden lg:flex flex-col justify-center text-slate-100">
+            <h1 className="text-3xl font-black leading-tight">
+              Satu akun untuk
+              <span className="text-blue-400"> mengelola presensi</span> secara
+              terintegrasi.
+            </h1>
+            <p className="mt-4 text-sm text-slate-300">
+              Daftarkan akun baru untuk mengakses sistem presensi. Role{' '}
+              <span className="font-semibold text-slate-100">Admin</span> dapat
+              mengelola laporan, sedangkan{' '}
+              <span className="font-semibold text-slate-100">Mahasiswa</span>{' '}
+              hanya melakukan check-in / check-out.
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <p className="text-slate-300 font-semibold">
+                  🔐 Password di-hash
+                </p>
+                <p className="mt-1 text-slate-400">
+                  Password tidak disimpan dalam bentuk plain text. Backend
+                  menggunakan <span className="font-semibold">bcrypt</span>.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                <p className="text-slate-300 font-semibold">
+                  🎫 Token JWT aman
+                </p>
+                <p className="mt-1 text-slate-400">
+                  Setelah login, sistem mengeluarkan token JWT untuk autentikasi
+                  tiap request.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Form card */}
+          <section className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl shadow-black/50 p-8">
+            <h2 className="text-2xl font-bold text-slate-50 text-center">
+              Register Akun Baru
+            </h2>
+            <p className="mt-2 text-xs text-slate-400 text-center">
+              Isi data dengan benar sesuai identitas kampus / perusahaan.
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+              {/* Nama */}
+              <div>
+                <label
+                  htmlFor="nama"
+                  className="block text-xs font-semibold uppercase tracking-wide text-slate-300"
+                >
+                  Nama Lengkap
+                </label>
+                <input
+                  id="nama"
+                  type="text"
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  required
+                  className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm
+                             text-slate-50 placeholder:text-slate-500
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Irfansyah"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-xs font-semibold uppercase tracking-wide text-slate-300"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm
+                             text-slate-50 placeholder:text-slate-500
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="nama@contoh.com"
+                />
+              </div>
+
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold uppercase tracking-wide text-slate-300"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="mt-2 block w-full rounded-lg border border-slate-700 bg-slate-950/60 px-3 py-2.5 text-sm
+                             text-slate-50 placeholder:text-slate-500
+                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Minimal 6 karakter"
+                />
+              </div>
+
+              {/* Role */}
+              <div>
+                <span className="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">
+                  Role
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setRole('mahasiswa')}
+                    className={
+                      'rounded-lg border px-3 py-2 text-center transition-colors ' +
+                      (role === 'mahasiswa'
+                        ? 'border-blue-500 bg-blue-500/10 text-blue-300'
+                        : 'border-slate-700 bg-slate-950/40 text-slate-300 hover:border-blue-500/60')
+                    }
+                  >
+                    Mahasiswa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRole('admin')}
+                    className={
+                      'rounded-lg border px-3 py-2 text-center transition-colors ' +
+                      (role === 'admin'
+                        ? 'border-amber-400 bg-amber-500/10 text-amber-200'
+                        : 'border-slate-700 bg-slate-950/40 text-slate-300 hover:border-amber-400/70')
+                    }
+                  >
+                    Admin
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  Pilih <span className="font-semibold">Admin</span> hanya untuk
+                  dosen / supervisor yang berhak mengakses laporan penuh.
+                </p>
+              </div>
+
+              {/* Alert */}
+              {error && (
+                <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+                  {error}
+                </div>
+              )}
+              {successMsg && (
+                <div className="rounded-md border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-300">
+                  {successMsg}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-1 inline-flex w-full items-center justify-center rounded-lg bg-blue-500 px-4 py-2.5
+                           text-sm font-semibold text-slate-50 shadow-lg shadow-blue-500/30
+                           hover:bg-blue-400 disabled:opacity-60 disabled:cursor-not-allowed
+                           transition-colors"
+              >
+                {loading ? 'Memproses...' : 'Daftar'}
+              </button>
+            </form>
+
+            <p className="mt-6 text-xs text-center text-slate-400">
+              Sudah punya akun?{' '}
+              <Link
+                to="/login"
+                className="font-semibold text-blue-400 hover:text-blue-300"
+              >
+                Login di sini
+              </Link>
+            </p>
+          </section>
+        </div>
+      </main>
     </div>
   );
 }
