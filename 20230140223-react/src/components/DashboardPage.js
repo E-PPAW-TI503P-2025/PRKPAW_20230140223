@@ -1,53 +1,194 @@
 // src/components/DashboardPage.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // <- untuk membaca isi JWT
+import { jwtDecode } from 'jwt-decode';
 
 function DashboardPage() {
   const navigate = useNavigate();
+  const [user, setUser] = useState(null); // {id, nama, email, role}
 
-  // Ambil token dari localStorage
-  const token = localStorage.getItem('token');
+  useEffect(() => {
+    const token = localStorage.getItem('token');
 
-  let userName = 'Pengguna';
-  try {
-    if (token) {
-      const payload = jwtDecode(token);    // decode token
-      // backend kita mengisi payload.nama
-      if (payload.nama) {
-        userName = payload.nama;
-      }
+    if (!token) {
+      navigate('/login');
+      return;
     }
-  } catch (err) {
-    console.error('Gagal decode token:', err);
-  }
+
+    try {
+      const payload = jwtDecode(token);
+      setUser({
+        id: payload.id,
+        nama: payload.nama,
+        email: payload.email,
+        role: payload.role,
+      });
+    } catch (err) {
+      console.error('Gagal decode token:', err);
+      localStorage.removeItem('token');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token'); // Hapus token dari local storage
-    navigate('/login');              // Arahkan kembali ke halaman login
+    localStorage.removeItem('token');
+    navigate('/login');
   };
 
-  return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-8">
-      <div className="bg-white p-10 rounded-lg shadow-md text-center">
-        <h1 className="text-3xl font-bold text-green-600 mb-4">
-          Login Sukses!
-        </h1>
-
-        <p className="text-lg text-gray-700 mb-2">
-          Selamat Datang, <span className="font-semibold">{userName}</span>.
+  if (!user) {
+    // state loading singkat saat decode token
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-100">
+        <p className="text-sm text-slate-300 animate-pulse">
+          Memuat dashboard...
         </p>
-        <p className="text-md text-gray-600 mb-8">
-          Anda sekarang berada di halaman Dashboard.
-        </p>
-
-        <button
-          onClick={handleLogout}
-          className="py-2 px-6 bg-red-500 text-white font-semibold rounded-md shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        >
-          Logout
-        </button>
       </div>
+    );
+  }
+
+  const isAdmin = user.role === 'admin';
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      {/* top bar */}
+      <header className="w-full px-6 py-4 flex items-center justify-between border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+        <div className="flex items-center gap-2 text-slate-100">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-bold">
+            PK
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Presensi Karyawan</p>
+            <p className="text-xs text-slate-400">
+              Dashboard • {isAdmin ? 'Admin' : 'User'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right text-xs text-slate-300">
+            <p className="font-semibold text-slate-100">{user.nama}</p>
+            <p className="text-[11px] text-slate-400">{user.email}</p>
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="inline-flex items-center gap-2 rounded-full border border-red-500/70 bg-red-500/10 px-4 py-1.5
+                       text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
+          >
+            <span>Logout</span>
+          </button>
+        </div>
+      </header>
+
+      {/* main */}
+      <main className="flex-1 flex flex-col lg:flex-row">
+        {/* left - main card */}
+        <section className="flex-1 flex items-center justify-center px-4 py-8">
+          <div className="w-full max-w-xl bg-slate-900/80 rounded-2xl border border-slate-800 shadow-2xl shadow-black/60 p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">
+              Dashboard
+            </p>
+            <h1 className="mt-3 text-3xl font-black text-slate-50">
+              Login Sukses, {user.nama.split(' ')[0]}!
+            </h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Anda saat ini masuk sebagai{' '}
+              <span className="font-semibold text-emerald-300">
+                {isAdmin ? 'Admin' : 'User'}
+              </span>
+              . Semua request ke API presensi akan dilindungi oleh token JWT
+              yang tersimpan di browser.
+            </p>
+
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-slate-300 font-semibold">Status Akun</p>
+                <p className="mt-1 text-emerald-300 font-semibold">
+                  {isAdmin ? 'Admin Aktif' : 'User Aktif'}
+                </p>
+                <p className="mt-1 text-slate-400">
+                  Token JWT akan kadaluarsa sesuai konfigurasi backend.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-slate-300 font-semibold">Keamanan</p>
+                <p className="mt-1 text-slate-200">JWT + Bcrypt</p>
+                <p className="mt-1 text-slate-400">
+                  Password di-hash, token diverifikasi di setiap request
+                  backend.
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-4">
+                <p className="text-slate-300 font-semibold">Role Akses</p>
+                <p className="mt-1 text-slate-200 capitalize">{user.role}</p>
+                <p className="mt-1 text-slate-400">
+                  Hak akses API presensi ditentukan oleh peran Anda.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-3 text-xs">
+              <button
+                disabled
+                className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/60
+                           px-4 py-2 text-emerald-300 cursor-not-allowed"
+              >
+                Check-in Presensi (Coming soon)
+              </button>
+              <button
+                disabled
+                className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/60
+                           px-4 py-2 text-sky-300 cursor-not-allowed"
+              >
+                Lihat Laporan Harian (Coming soon)
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* right - side panel */}
+        <aside className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-slate-800 bg-slate-950/80 px-4 py-6">
+          <div className="max-w-xs mx-auto space-y-5 text-xs text-slate-300">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
+              <p className="text-slate-200 font-semibold">
+                Informasi Token (client-side)
+              </p>
+              <p className="mt-1 text-slate-400">
+                Token JWT Anda saat ini disimpan di{' '}
+                <span className="font-semibold">localStorage</span> dengan key{' '}
+                <code className="bg-slate-800 px-1 rounded">"token"</code>.
+              </p>
+              <p className="mt-2 text-slate-400">
+                Frontend menggunakan token ini untuk mengakses endpoint
+                terlindungi seperti <code>/api/presensi</code> dan{' '}
+                <code>/api/reports</code>.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
+              <p className="text-slate-200 font-semibold">
+                Tips pengujian (untuk laporan tugas)
+              </p>
+              <ul className="mt-2 list-disc list-inside space-y-1 text-slate-400">
+                <li>Buka DevTools → Application → Local Storage.</li>
+                <li>Lihat dan salin nilai token JWT.</li>
+                <li>
+                  Coba panggil API presensi via Postman dengan header{' '}
+                  <code>Authorization: Bearer &lt;token&gt;</code>.
+                </li>
+              </ul>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="w-full rounded-lg bg-red-500/90 hover:bg-red-500 px-4 py-2.5 text-xs font-semibold text-slate-50
+                         shadow-lg shadow-red-500/30 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </aside>
+      </main>
     </div>
   );
 }
