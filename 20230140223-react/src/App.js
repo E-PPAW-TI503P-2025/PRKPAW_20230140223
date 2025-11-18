@@ -1,40 +1,29 @@
-import React, { useEffect, useState } from 'react';
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import LoginPage from './components/LoginPage';
+import RegisterPage from './components/RegisterPage';
+import DashboardPage from './components/DashboardPage';
 
 function App() {
-  const [name, setName] = useState('');
-  const [serverMsg, setServerMsg] = useState('');
-
-  useEffect(() => {
-    fetch('http://localhost:5000') // atau fetch('/') jika kamu menggunakan "proxy" di package.json React
-      .then(res => res.json())
-      .then(data => setServerMsg(data.message))
-      .catch(err => console.error('Fetch error:', err));
-  }, []);
-
   return (
-    <div style={{ textAlign: 'center', marginTop: 80 }}>
-      <h1>Integrasi React dan Node.js</h1>
+    <Router>
+      <div>
+        {/* Navigasi sederhana (bisa kamu hapus nanti kalau tidak perlu) */}
+        <nav style={{ padding: '12px 24px', backgroundColor: '#f3f4f6' }}>
+          <Link to="/login" style={{ marginRight: 16 }}>Login</Link>
+          <Link to="/register">Register</Link>
+        </nav>
 
-      <div style={{ marginTop: 20 }}>
-        <label htmlFor="name">Masukkan nama: </label>
-        <input
-          id="name"
-          type="text"
-          value={name}
-          onChange={e => setName(e.target.value)}
-          placeholder="e.g. Irfansyah 223"
-          style={{ padding: 6, marginLeft: 8 }}
-        />
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          {/* default: kalau buka "/" langsung arahkan ke halaman login */}
+          <Route path="/" element={<LoginPage />} />
+        </Routes>
       </div>
-
-      <h2 style={{ marginTop: 30 }}>
-        {name ? `Hello, ${name}!` : 'Hello! Masukkan namamu di atas.'}
-      </h2>
-
-      <p style={{ marginTop: 20 }}>
-        Pesan dari server: {serverMsg || ' (mengambil...)'}
-      </p>
-    </div>
+    </Router>
   );
 }
 
