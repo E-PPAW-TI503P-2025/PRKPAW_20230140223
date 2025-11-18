@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import LoginPage from './components/LoginPage';
@@ -9,17 +8,24 @@ function App() {
   return (
     <Router>
       <div>
-        {/* Navigasi sederhana (bisa kamu hapus nanti kalau tidak perlu) */}
-        <nav style={{ padding: '12px 24px', backgroundColor: '#f3f4f6' }}>
-          <Link to="/login" style={{ marginRight: 16 }}>Login</Link>
-          <Link to="/register">Register</Link>
+        <nav className="p-4 bg-gray-100 flex justify-between">
+          <div className="font-semibold text-gray-700">
+            Presensi Karyawan
+          </div>
+          <div>
+            <Link to="/login" className="mr-4 text-blue-600 hover:underline">
+              Login
+            </Link>
+            <Link to="/register" className="text-blue-600 hover:underline">
+              Register
+            </Link>
+          </div>
         </nav>
 
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
-          {/* default: kalau buka "/" langsung arahkan ke halaman login */}
           <Route path="/" element={<LoginPage />} />
         </Routes>
       </div>
