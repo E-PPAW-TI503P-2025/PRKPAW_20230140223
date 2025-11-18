@@ -1,6 +1,6 @@
 # Tugas 7 – Integrasi Frontend React dengan Backend API (Autentikasi)
 
-Nama : Irfansyah  
+Nama : Irfansyah Ridho Aninda
 NIM  : 20230140223  
 Mata Kuliah : Pengembangan Aplikasi Web  
 Topik : Integrasi React + Node.js (JWT Auth) untuk Presensi Karyawan
