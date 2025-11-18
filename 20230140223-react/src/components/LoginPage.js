@@ -80,7 +80,7 @@ function LoginPage() {
                 <h1 className="mt-3 text-3xl font-black leading-tight">
                   Kelola presensi karyawan
                   <br />
-                  secara modern & aman.
+                  secara aman.
                 </h1>
 
                 <p className="mt-4 text-sm text-slate-900/70">

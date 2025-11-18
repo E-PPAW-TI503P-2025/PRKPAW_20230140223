@@ -60,9 +60,11 @@ Dokumen ini berisi **tangkapan layar (screenshot)** dari 3 halaman utama aplikas
 ## 3. Dashboard Page
 
 ![Dashboard Page](Documentation/image29.png)
+![Dashboard Page check Token on Local storage](Documentation/image30.png)
 
 **Deskripsi Singkat**
 
+- Note : Button Check-in Presensi dan button Lihat Laporan Harian belum membuat fungsinya
 - Halaman Dashboard hanya bisa diakses setelah user **berhasil login** dan memiliki token JWT yang valid.
 - Pada saat halaman di-render:
   - Frontend mengambil token dari `localStorage`.
