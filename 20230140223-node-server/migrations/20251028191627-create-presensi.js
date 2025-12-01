@@ -27,6 +27,14 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true, // checkOut can be null initially
       },
+      latitude: {
+        type: Sequelize.DECIMAL(10, 6),
+        allowNull: true,
+      },
+      longitude: {
+        type: Sequelize.DECIMAL(10, 6),
+        allowNull: true,
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE
