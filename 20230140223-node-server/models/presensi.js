@@ -31,10 +31,21 @@ module.exports = (sequelize, DataTypes) => {
     checkOut: {
       type: DataTypes.DATE,
       allowNull: true, // checkOut can be null initially
-    }
-  }, {
+    },
+    latitude: {
+      type: DataTypes.DECIMAL(10, 8),
+      allowNull: true, // boleh null kalau user nolak share lokasi
+    },
+    longitude: {
+      type: DataTypes.DECIMAL(11, 8),
+      allowNull: true,
+    },
+  }, 
+  {
     sequelize,
     modelName: 'Presensi',
-  });
+    tableName: "presensis", // tambahkan ini supaya pasti match tabel
+  }
+);
   return Presensi;
 };
