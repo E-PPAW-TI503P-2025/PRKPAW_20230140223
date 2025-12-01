@@ -1,21 +1,44 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api";
 
-function PresensiPage() {
-  const navigate = useNavigate();
+// Komponen dari React Leaflet
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 
-  const [user, setUser] = useState(null); // { id, nama, email, role }
+// Import file PNG icon Leaflet
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// Fix path icon default
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+});
+
+function PresensiPage() {
+  const [user, setUser] = useState(null);
+
   const [message, setMessage] = useState(null);
   const [error, setError] = useState(null);
-  const [loadingIn, setLoadingIn] = useState(false);
-  const [loadingOut, setLoadingOut] = useState(false);
-  const [lastRecord, setLastRecord] = useState(null); // simpan data presensi terakhir dari backend
+  const [lastRecord, setLastRecord] = useState(null);
 
-  // Decode token di awal
+  const [loading, setLoading] = useState(false);
+
+  // ====== STATE UNTUK GEOLOCATION ======
+  const [coords, setCoords] = useState(null); // { lat, lng }
+  const [locStatus, setLocStatus] = useState("idle"); 
+  // idle | pending | ok | error | unsupported
+
+  const navigate = useNavigate();
+
+  // ====== CEK TOKEN & SET USER ======
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -25,12 +48,7 @@ function PresensiPage() {
 
     try {
       const payload = jwtDecode(token);
-      setUser({
-        id: payload.id,
-        nama: payload.nama,
-        email: payload.email,
-        role: payload.role,
-      });
+      setUser(payload);
     } catch (err) {
       console.error("Gagal decode token di PresensiPage:", err);
       localStorage.removeItem("token");
@@ -38,58 +56,124 @@ function PresensiPage() {
     }
   }, [navigate]);
 
-  const sendRequest = async (endpoint, setLoading) => {
-    setLoading(true);
-    setMessage(null);
-    setError(null);
+  // ====== FUNGSI AMBIL LOKASI ======
+  const getLocation = () => {
+    if (!("geolocation" in navigator)) {
+      setLocStatus("unsupported");
+      setError("Geolocation tidak didukung oleh browser ini.");
+      return;
+    }
 
+    setLocStatus("pending");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCoords({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+        setLocStatus("ok");
+      },
+      (err) => {
+        console.error("Geolocation error:", err);
+        setLocStatus("error");
+        setError("Gagal mendapatkan lokasi: " + err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      }
+    );
+  };
+
+  // Ambil lokasi sekali saat komponen pertama kali dimuat
+  useEffect(() => {
+    getLocation();
+  }, []);
+
+  // Helper header Authorization
+  const getAuthHeader = () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setLoading(false);
       navigate("/login");
+      return {};
+    }
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  // ====== HANDLE CHECK-IN (KIRIM LOKASI) ======
+  const handleCheckIn = async () => {
+    setError(null);
+    setMessage(null);
+
+    // Di materi asisten: kalau belum ada lokasi, jangan izinkan check-in
+    if (!coords) {
+      setError(
+        "Lokasi belum didapatkan. Mohon izinkan akses lokasi di browser lalu coba lagi."
+      );
       return;
     }
 
     try {
+      setLoading(true);
+
       const res = await axios.post(
-        `${API_BASE_URL}/api/presensi/${endpoint}`,
-        {},
+        `${API_BASE_URL}/api/presensi/check-in`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          latitude: coords.lat,
+          longitude: coords.lng,
+        },
+        {
+          headers: getAuthHeader(),
         }
       );
 
-      // backend kita sudah mengirim { message, data: {...} }
-      setMessage(res.data.message || "Berhasil melakukan presensi.");
-      if (res.data.data) {
-        setLastRecord(res.data.data);
-      }
+      setMessage(res.data?.message || "Check-in berhasil.");
+      setLastRecord(res.data?.data || null);
     } catch (err) {
-      const msg =
-        err.response?.data?.message ||
-        "Terjadi kesalahan saat memproses presensi.";
-      setError(msg);
+      console.error("CheckIn error:", err);
+      setLastRecord(null);
+      setError(
+        err.response?.data?.message || "Terjadi kesalahan saat check-in."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCheckIn = async () => {
-    await sendRequest("check-in", setLoadingIn);
-  };
-
+  // ====== HANDLE CHECK-OUT ======
   const handleCheckOut = async () => {
-    await sendRequest("check-out", setLoadingOut);
+    setError(null);
+    setMessage(null);
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(
+        `${API_BASE_URL}/api/presensi/check-out`,
+        {},
+        {
+          headers: getAuthHeader(),
+        }
+      );
+
+      setMessage(res.data?.message || "Check-out berhasil.");
+      setLastRecord(res.data?.data || null);
+    } catch (err) {
+      console.error("CheckOut error:", err);
+      setLastRecord(null);
+      setError(
+        err.response?.data?.message || "Terjadi kesalahan saat check-out."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!user) {
-    // state loading saat menunggu decode token
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-100">
         <p className="text-sm text-slate-300 animate-pulse">
-          Menyiapkan halaman presensi...
+          Memuat halaman presensi...
         </p>
       </div>
     );
@@ -98,135 +182,170 @@ function PresensiPage() {
   const firstName = user.nama?.split(" ")[0] || "User";
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-3xl grid md:grid-cols-[1.2fr,1fr] gap-6">
-          {/* Kartu utama presensi */}
-          <section className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-2xl shadow-black/60 p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-emerald-400">
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-10">
+        <h1 className="text-3xl font-bold mb-2">Presensi</h1>
+        <p className="text-sm text-slate-400 mb-4">
+          Lakukan check-in dan check-out presensi yang terintegrasi dengan
+          backend Node.js. Lokasi akan direkam menggunakan Geolocation API.
+        </p>
+
+        {/* ====== PETA (OSM) DI ATAS KARTU ====== */}
+        {coords && (
+          <div className="mb-6 rounded-2xl overflow-hidden border border-slate-800 bg-slate-900/60">
+            <MapContainer
+              center={[coords.lat, coords.lng]}
+              zoom={16}
+              style={{ height: "280px", width: "100%" }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+              />
+              <Marker position={[coords.lat, coords.lng]}>
+                <Popup>Lokasi presensi Anda saat ini.</Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        )}
+
+        {/* Status lokasi kecil di bawah peta */}
+        <p className="text-xs text-slate-500 mb-6">
+          Status lokasi:{" "}
+          {locStatus === "pending" && "mengambil lokasi..."}
+          {locStatus === "ok" && "lokasi berhasil didapatkan ✅"}
+          {locStatus === "error" && "gagal mendapatkan lokasi ❌"}
+          {locStatus === "unsupported" && "browser tidak mendukung geolocation."}
+        </p>
+
+        {/* ====== LAYOUT KARTU PRESENSI + INFO ====== */}
+        <div className="grid lg:grid-cols-[1.2fr,1fr] gap-6">
+          {/* Kartu kiri: aksi presensi */}
+          <section className="bg-slate-900/80 border border-slate-800 rounded-2xl shadow-xl shadow-black/40 p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">
               Presensi
             </p>
-            <h1 className="mt-3 text-2xl md:text-3xl font-black text-slate-50">
+            <h2 className="mt-3 text-2xl font-black text-slate-50">
               Lakukan Presensi, {firstName}.
-            </h1>
+            </h2>
             <p className="mt-2 text-sm text-slate-300">
               Gunakan tombol di bawah untuk melakukan{" "}
-              <span className="font-semibold text-emerald-300">
-                Check-In
-              </span>{" "}
-              dan{" "}
-              <span className="font-semibold text-rose-300">
-                Check-Out
-              </span>{" "}
+              <span className="font-semibold text-emerald-300">Check-In</span>{" "}
+              dan <span className="font-semibold text-rose-300">Check-Out</span>{" "}
               ke sistem presensi terintegrasi Node.js.
             </p>
 
             {/* Pesan sukses / error */}
             <div className="mt-4 space-y-2 text-sm">
               {message && (
-                <div className="rounded-md border border-emerald-500/60 bg-emerald-500/10 px-3 py-2 text-emerald-300">
+                <div className="rounded-lg border border-emerald-500/70 bg-emerald-500/10 px-4 py-2 text-emerald-200">
                   {message}
                 </div>
               )}
               {error && (
-                <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-red-300">
+                <div className="rounded-lg border border-rose-500/70 bg-rose-500/10 px-4 py-2 text-rose-200">
                   {error}
                 </div>
               )}
             </div>
 
             {/* Tombol aksi */}
-            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               <button
                 onClick={handleCheckIn}
-                disabled={loadingIn || loadingOut}
-                className="flex-1 inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-2.5
-                           text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/25
-                           hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed
-                           transition-colors"
+                disabled={loading}
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-500 px-4 py-2.5
+                           text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30
+                           hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loadingIn ? "Memproses Check-In..." : "Check-In"}
+                {loading ? "Memproses..." : "Check-In"}
               </button>
-
               <button
                 onClick={handleCheckOut}
-                disabled={loadingIn || loadingOut}
-                className="flex-1 inline-flex items-center justify-center rounded-lg bg-rose-500 px-4 py-2.5
-                           text-sm font-semibold text-slate-50 shadow-lg shadow-rose-500/25
-                           hover:bg-rose-400 disabled:opacity-60 disabled:cursor-not-allowed
-                           transition-colors"
+                disabled={loading}
+                className="inline-flex flex-1 items-center justify-center rounded-full bg-rose-500 px-4 py-2.5
+                           text-sm font-semibold text-slate-50 shadow-lg shadow-rose-500/30
+                           hover:bg-rose-400 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loadingOut ? "Memproses Check-Out..." : "Check-Out"}
+                {loading ? "Memproses..." : "Check-Out"}
               </button>
             </div>
 
-            {/* Info presensi terakhir */}
-            {lastRecord && (
-              <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/60 p-4 text-xs text-slate-300">
-                <p className="font-semibold text-slate-200 mb-1">
-                  Riwayat presensi terakhir:
-                </p>
-                <p>
-                  <span className="text-slate-400">Check-In:</span>{" "}
-                  <span className="font-mono">
-                    {lastRecord.checkIn || "-"}
-                  </span>
-                </p>
-                <p>
-                  <span className="text-slate-400">Check-Out:</span>{" "}
-                  <span className="font-mono">
-                    {lastRecord.checkOut || "-"}
-                  </span>
-                </p>
-              </div>
-            )}
+            {/* Riwayat terakhir */}
+            <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/70 px-4 py-3 text-xs text-slate-300">
+              <p className="font-semibold text-slate-200 mb-1">
+                Riwayat presensi terakhir:
+              </p>
+              {lastRecord ? (
+                <>
+                  <p>
+                    Check-In:{" "}
+                    {new Date(lastRecord.checkIn).toLocaleString("id-ID", {
+                      timeZone: "Asia/Jakarta",
+                    })}
+                  </p>
+                  <p>
+                    Check-Out:{" "}
+                    {lastRecord.checkOut
+                      ? new Date(lastRecord.checkOut).toLocaleString("id-ID", {
+                          timeZone: "Asia/Jakarta",
+                        })
+                      : "Belum check-out"}
+                  </p>
+                </>
+              ) : (
+                <p>Belum ada data presensi yang tercatat pada sesi ini.</p>
+              )}
+            </div>
           </section>
 
-          {/* Panel info samping */}
-          <aside className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 text-xs text-slate-300 space-y-4">
-            <div>
-              <p className="text-slate-200 font-semibold">
-                Identitas Pengguna
-              </p>
-              <p className="mt-1 text-slate-300">
-                {user.nama}{" "}
-                <span className="text-slate-500">({user.email})</span>
-              </p>
-              <p className="mt-1 text-slate-400">
-                Role:{" "}
-                <span className="font-semibold capitalize">
-                  {user.role}
-                </span>
-              </p>
-            </div>
+          {/* Kartu kanan: penjelasan / informasi user */}
+          <aside className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 text-sm text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-400">
+              Identitas Pengguna
+            </p>
+            <p className="mt-2 text-slate-100 font-semibold">
+              {user.nama}{" "}
+              <span className="text-xs text-slate-400">({user.email})</span>
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Role:{" "}
+              <span className="font-semibold capitalize">{user.role}</span>
+            </p>
 
-            <div>
-              <p className="text-slate-200 font-semibold">
-                Cara kerja tombol presensi
+            <div className="mt-5 text-xs space-y-2">
+              <p className="font-semibold text-slate-200 mb-1">
+                Cara kerja tombol presensi:
               </p>
-              <ul className="mt-2 list-disc list-inside space-y-1 text-slate-400">
+              <ul className="list-disc list-inside space-y-1 text-slate-400">
                 <li>
                   Frontend mengirim request{" "}
-                  <code className="bg-slate-800 px-1 rounded">
+                  <code className="bg-slate-800 px-1 rounded text-[11px]">
                     POST /api/presensi/check-in
                   </code>{" "}
                   atau{" "}
-                  <code className="bg-slate-800 px-1 rounded">
+                  <code className="bg-slate-800 px-1 rounded text-[11px]">
                     /check-out
                   </code>
                   .
                 </li>
                 <li>
                   Header{" "}
-                  <code className="bg-slate-800 px-1 rounded">
+                  <code className="bg-slate-800 px-1 rounded text-[11px]">
                     Authorization: Bearer &lt;token&gt;
                   </code>{" "}
                   dikirim otomatis dari browser.
                 </li>
                 <li>
-                  Backend membaca <code>req.user.id</code> dari token JWT
-                  dan menyimpan presensi ke database.
+                  Saat check-in, koordinat{" "}
+                  <span className="font-mono text-[11px]">
+                    latitude / longitude
+                  </span>{" "}
+                  ikut dikirim ke backend dan disimpan di tabel{" "}
+                  <code className="bg-slate-800 px-1 rounded text-[11px]">
+                    presensis
+                  </code>
+                  .
                 </li>
               </ul>
             </div>
