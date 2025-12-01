@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 
-const API_BASE_URL = 'http://localhost:3308'; // sesuaikan dengan port server Node.js-mu
+import { API_BASE_URL } from '../api';
 
 function RegisterPage() {
   const [nama, setNama] = useState('');
