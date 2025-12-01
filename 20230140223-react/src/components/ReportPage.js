@@ -1,0 +1,233 @@
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { API_BASE_URL } from "../api";
+
+function ReportPage() {
+  const [reports, setReports] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [startDate, setStartDate] = useState(""); // yyyy-mm-dd
+  const [endDate, setEndDate] = useState("");     // yyyy-mm-dd
+
+  const navigate = useNavigate();
+
+  // Cek token + role admin lalu ambil data pertama kali
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const payload = jwtDecode(token);
+      if (payload.role !== "admin") {
+        // bukan admin, kembalikan ke dashboard
+        navigate("/dashboard");
+        return;
+      }
+    } catch (err) {
+      console.error("Gagal decode token di /reports:", err);
+      localStorage.removeItem("token");
+      navigate("/login");
+      return;
+    }
+
+    // pertama kali load tanpa filter
+    fetchReports();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchReports = async (opts = {}) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const params = new URLSearchParams();
+
+      if (opts.nama) params.append("nama", opts.nama);
+      if (opts.startDate) params.append("startDate", opts.startDate);
+      if (opts.endDate) params.append("endDate", opts.endDate);
+
+      const queryString = params.toString() ? `?${params.toString()}` : "";
+
+      const res = await axios.get(
+        `${API_BASE_URL}/api/reports/daily${queryString}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // backend bisa mengembalikan { data: [...] } atau langsung array
+      const data = Array.isArray(res.data) ? res.data : res.data.data;
+      setReports(data || []);
+    } catch (err) {
+      console.error("fetchReports error:", err);
+      setReports([]);
+      setError(
+        err.response?.data?.message || "Gagal mengambil data laporan presensi."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchReports({
+      nama: searchTerm.trim() || undefined,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-2">
+          Laporan Presensi Harian
+        </h1>
+        <p className="text-sm text-slate-400 mb-6">
+          Halaman ini hanya dapat diakses oleh{" "}
+          <span className="font-semibold text-emerald-300">Admin</span>.
+          Data diambil dari endpoint{" "}
+          <code className="bg-slate-800 px-1 rounded">
+            GET /api/reports/daily
+          </code>{" "}
+          dengan token JWT.
+        </p>
+
+        {/* Form pencarian + filter tanggal */}
+        <form
+          onSubmit={handleSearchSubmit}
+          className="mb-6 grid gap-3 md:grid-cols-[2fr,1.1fr,1.1fr,auto] items-end bg-slate-900/60 border border-slate-800 rounded-xl p-4"
+        >
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold mb-1 text-slate-300">
+              Cari berdasarkan nama
+            </label>
+            <input
+              type="text"
+              placeholder="Contoh: Irfansyah"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-700 bg-slate-950/70
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500
+                         placeholder:text-slate-500"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold mb-1 text-slate-300">
+              Dari tanggal
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-700 bg-slate-950/70
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs font-semibold mb-1 text-slate-300">
+              Sampai tanggal
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="px-3 py-2 text-sm rounded-lg border border-slate-700 bg-slate-950/70
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2.5 text-sm font-semibold rounded-lg bg-emerald-500 text-slate-950
+                       shadow-lg shadow-emerald-500/30 hover:bg-emerald-400
+                       disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? "Memuat..." : "Terapkan Filter"}
+          </button>
+        </form>
+
+        {/* Error message */}
+        {error && (
+          <p className="text-red-300 bg-red-900/40 border border-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            {error}
+          </p>
+        )}
+
+        {/* Tabel data */}
+        <div className="bg-slate-900/80 border border-slate-800 rounded-xl overflow-hidden">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-800">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                  Nama
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                  Check-In
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                  Check-Out
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {reports.length > 0 ? (
+                reports.map((presensi) => (
+                  <tr key={presensi.id}>
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-50">
+                      {presensi.user ? presensi.user.nama : "N/A"}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-300">
+                      {presensi.checkIn
+                        ? new Date(presensi.checkIn).toLocaleString("id-ID", {
+                            timeZone: "Asia/Jakarta",
+                          })
+                        : "-"}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-slate-300">
+                      {presensi.checkOut
+                        ? new Date(presensi.checkOut).toLocaleString("id-ID", {
+                            timeZone: "Asia/Jakarta",
+                          })
+                        : "Belum Check-Out"}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan="3"
+                    className="px-6 py-4 text-center text-slate-400 text-sm"
+                  >
+                    Tidak ada data yang ditemukan.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default ReportPage;

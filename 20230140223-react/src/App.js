@@ -6,6 +6,7 @@ import RegisterPage from './components/RegisterPage';
 import DashboardPage from './components/DashboardPage';
 import Navbar from './components/Navbar';
 import PresensiPage from './components/PresensiPage';
+import ReportPage from './components/ReportPage';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/presensi" element={<PresensiPage />} />
+            <Route path="/reports" element={<ReportPage />} />
             {/* default: kalau buka "/" langsung ke login */}
             <Route path="/" element={<LoginPage />} />
           </Routes>

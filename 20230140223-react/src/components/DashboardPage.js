@@ -114,14 +114,14 @@ function DashboardPage() {
                 </p>
               )}
 
-              {/* Tombol laporan hanya muncul jika role = admin */}
+              {/* Tombol laporan hanya muncul jika role = admin, dan sekarang AKTIF ke /reports */}
               {isAdmin && (
                 <button
-                  disabled
+                  onClick={() => navigate('/reports')}
                   className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/60
-                            px-4 py-2 text-sky-300 cursor-not-allowed"
+                            px-4 py-2 text-sky-300 hover:bg-sky-500/20 text-xs transition-colors"
                 >
-                  Lihat Laporan Harian (Coming soon)
+                  Lihat Laporan Harian (Admin)
                 </button>
               )}
             </div>
