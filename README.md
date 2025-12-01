@@ -1,7 +1,5 @@
 # **Tugas Praktikum PAW – RESTful API Presensi & Report dengan Express.js**
 
-### **Nama Mahasiswa**
-
 **Irfansyah**
 **NIM:** 20230140223
 **Kelas:** TI-5E (PAW – E-PPAW-TI503P-2025)
