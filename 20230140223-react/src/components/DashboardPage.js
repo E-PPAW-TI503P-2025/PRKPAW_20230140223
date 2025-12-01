@@ -101,11 +101,11 @@ function DashboardPage() {
             <div className="mt-8 flex flex-wrap gap-3 text-xs">
               {/* Tombol ini boleh muncul untuk semua user */}
               <button
-                disabled
+                onClick={() => navigate('/presensi')}
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/60
-                          px-4 py-2 text-emerald-300 cursor-not-allowed"
+                          px-4 py-2 text-emerald-300 hover:bg-emerald-500/20 text-xs"
               >
-                Check-in Presensi (Coming soon)
+                Buka Halaman Presensi
               </button>
 
               {!isAdmin && (
