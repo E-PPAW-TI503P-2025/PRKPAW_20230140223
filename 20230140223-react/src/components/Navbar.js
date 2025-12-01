@@ -57,17 +57,6 @@ function Navbar() {
 
         {/* Menu kanan */}
         <nav className="flex items-center gap-4 text-sm">
-          {/* ✅ Menu "Laporan Admin" hanya jika role = admin */}
-          {isAuthenticated && role === 'admin' && (
-            <Link
-              to="/dashboard" // nanti kalau bikin halaman khusus laporan, path ini bisa diganti
-              className={`hover:text-emerald-400 ${
-                isActive('/dashboard') ? 'text-emerald-400 font-semibold' : ''
-              }`}
-            >
-              Laporan Admin
-            </Link>
-          )}
 
           {/* Kalau BELUM login: tampilkan Login & Register */}
           {!isAuthenticated && (
