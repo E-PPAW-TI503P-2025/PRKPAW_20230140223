@@ -4,15 +4,20 @@ const { matchedData } = require("express-validator");
 const timeZone = "Asia/Jakarta";
 
 exports.CheckIn = async (req, res) => {
-
   try {
     const { id: userId, nama: userName } = req.user || {};
     if (!userId) {
-      return res.status(401).json({ message: "Tidak ada identitas user. Pastikan Authorization: Bearer <token>." });
+      return res.status(401).json({
+        message: "Tidak ada identitas user. Pastikan Authorization: Bearer <token>.",
+      });
     }
+
+    // ambil lokasi (boleh kosong jika user menolak izin)
+    const { latitude, longitude } = req.body || {};
 
     const waktuSekarang = new Date();
 
+    // Cek apakah masih ada check-in aktif (belum check-out)
     const existingRecord = await Presensi.findOne({
       where: { userId, checkOut: null },
     });
@@ -23,26 +28,40 @@ exports.CheckIn = async (req, res) => {
         .json({ message: "Anda sudah melakukan check-in hari ini." });
     }
 
+    // Simpan ke DB, termasuk latitude & longitude
     const newRecord = await Presensi.create({
       userId,
       checkIn: waktuSekarang,
       checkOut: null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
     });
 
+    // ambil lagi beserta relasi user
     const withUser = await Presensi.findByPk(newRecord.id, {
-      include: [{ model: User, as: "user", attributes: ["id", "nama", "email", "role"] }],
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "nama", "email", "role"],
+        },
+      ],
     });
-    
+
     const formattedData = {
       id: withUser.id,
       userId: withUser.userId,
       checkIn: format(withUser.checkIn, "yyyy-MM-dd HH:mm:ssXXX", { timeZone }),
       checkOut: null,
+      latitude: withUser.latitude,
+      longitude: withUser.longitude,
       user: withUser.user,
     };
 
     console.log(
-      `CHECK-IN: User ${withUser?.user?.nama ?? userId} (${userId}) @ ${formattedData.checkIn}`
+      `CHECK-IN: User ${withUser?.user?.nama ?? userId} (${userId}) @ ${
+        formattedData.checkIn
+      } [lat=${formattedData.latitude}, lng=${formattedData.longitude}]`
     );
 
     res.status(201).json({
@@ -54,7 +73,11 @@ exports.CheckIn = async (req, res) => {
       data: formattedData,
     });
   } catch (error) {
-    res.status(500).json({ message: "Terjadi kesalahan pada server", error: error.message });
+    console.error("CheckIn error:", error);
+    res.status(500).json({
+      message: "Terjadi kesalahan pada server",
+      error: error.message,
+    });
   }
 };
 
