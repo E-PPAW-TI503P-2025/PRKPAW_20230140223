@@ -50,35 +50,6 @@ function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* top bar */}
-      <header className="w-full px-6 py-4 flex items-center justify-between border-b border-slate-800 bg-slate-950/80 backdrop-blur">
-        <div className="flex items-center gap-2 text-slate-100">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-bold">
-            PK
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Presensi Karyawan</p>
-            <p className="text-xs text-slate-400">
-              Dashboard • {isAdmin ? 'Admin' : 'User'}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="text-right text-xs text-slate-300">
-            <p className="font-semibold text-slate-100">{user.nama}</p>
-            <p className="text-[11px] text-slate-400">{user.email}</p>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-2 rounded-full border border-red-500/70 bg-red-500/10 px-4 py-1.5
-                       text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
-          >
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
 
       {/* main */}
       <main className="flex-1 flex flex-col lg:flex-row">
@@ -128,20 +99,31 @@ function DashboardPage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3 text-xs">
+              {/* Tombol ini boleh muncul untuk semua user */}
               <button
                 disabled
                 className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 border border-emerald-500/60
-                           px-4 py-2 text-emerald-300 cursor-not-allowed"
+                          px-4 py-2 text-emerald-300 cursor-not-allowed"
               >
                 Check-in Presensi (Coming soon)
               </button>
-              <button
-                disabled
-                className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/60
-                           px-4 py-2 text-sky-300 cursor-not-allowed"
-              >
-                Lihat Laporan Harian (Coming soon)
-              </button>
+
+              {!isAdmin && (
+                <p className="mt-2 text-[11px] text-slate-500">
+                  Akses laporan harian hanya tersedia untuk akun Admin.
+                </p>
+              )}
+
+              {/* Tombol laporan hanya muncul jika role = admin */}
+              {isAdmin && (
+                <button
+                  disabled
+                  className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 border border-sky-500/60
+                            px-4 py-2 text-sky-300 cursor-not-allowed"
+                >
+                  Lihat Laporan Harian (Coming soon)
+                </button>
+              )}
             </div>
           </div>
         </section>

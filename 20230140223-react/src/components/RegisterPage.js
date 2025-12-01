@@ -47,33 +47,6 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Top bar */}
-      <header className="w-full px-6 py-4 flex items-center justify-between text-slate-100 border-b border-slate-800">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center text-sm font-bold">
-            PK
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Presensi Karyawan</p>
-            <p className="text-xs text-slate-400">Create a new secure account</p>
-          </div>
-        </div>
-
-        <nav className="flex items-center gap-4 text-sm">
-          <Link
-            to="/login"
-            className="hover:text-blue-300 transition-colors"
-          >
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="font-semibold text-blue-400 border-b border-blue-400 pb-0.5"
-          >
-            Register
-          </Link>
-        </nav>
-      </header>
 
       {/* Content */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
