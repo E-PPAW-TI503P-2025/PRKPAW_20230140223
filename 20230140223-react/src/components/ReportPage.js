@@ -55,9 +55,23 @@ function ReportPage() {
     try {
       const params = new URLSearchParams();
 
-      if (opts.nama) params.append("nama", opts.nama);
-      if (opts.startDate) params.append("startDate", opts.startDate);
-      if (opts.endDate) params.append("endDate", opts.endDate);
+      if (opts.nama) {
+        params.append("nama", opts.nama);
+        params.append("filterBy", "nama");
+      }
+
+      if (opts.startDate) {
+        params.append("tanggalMulai", opts.startDate);   // <─ sesuaikan nama param
+      }
+
+      if (opts.endDate) {
+        params.append("tanggalSelesai", opts.endDate);   // <─ sesuaikan nama param
+      }
+
+      // kalau ada tanggal (mulai atau selesai) dan belum ada filterBy
+      if (!opts.nama && (opts.startDate || opts.endDate)) {
+        params.append("filterBy", "tanggal");
+      }
 
       const queryString = params.toString() ? `?${params.toString()}` : "";
 
@@ -86,8 +100,22 @@ function ReportPage() {
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
+
+    const trimmedName = searchTerm.trim();
+    const hasName = !!trimmedName;
+    const hasDate = !!(startDate || endDate);
+
+    // kalau dua-duanya diisi, kita stop di frontend saja
+    if (hasName && hasDate) {
+      setError("Pilih salah satu: filter berdasarkan nama ATAU berdasarkan rentang tanggal.");
+      setReports([]);
+      return;
+    }
+
+    setError(null);
+
     fetchReports({
-      nama: searchTerm.trim() || undefined,
+      nama: trimmedName || undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     });

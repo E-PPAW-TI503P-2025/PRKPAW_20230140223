@@ -1,4 +1,4 @@
-const { Presensi } = require("../models"); // Import model Presensi
+const { Presensi, User } = require("../models"); // Import model Presensi
 const { Op } = require("sequelize"); // Import Op untuk operator Sequelize
 
 const JKT_TZ = "Asia/Jakarta"; // Zona waktu Jakarta
@@ -12,7 +12,7 @@ exports.getDailyReport = async (req, res) => { // Fungsi untuk mendapatkan lapor
     // --- MODE EXPLISIT ---
     if (filterBy === "nama") { // Filter berdasarkan nama
       if (!nama) return res.status(400).json({ message: "Parameter nama wajib untuk filterBy=nama" }); // Validasi nama
-      where.nama = { [Op.like]: `%${nama}%` }; // Gunakan operator like untuk pencarian nama
+      where['$user.nama$'] = { [Op.like]: `%${nama}%` }; // Gunakan operator like untuk pencarian nama
 
     } else if (filterBy === "tanggal") { // Filter berdasarkan tanggal
       if (!(tanggalMulai || tanggalSelesai)) { // Validasi tanggal
@@ -43,7 +43,7 @@ exports.getDailyReport = async (req, res) => { // Fungsi untuk mendapatkan lapor
         });
       }
       if (hasName) { // Jika ada parameter nama
-        where.nama = { [Op.like]: `%${nama}%` }; // Gunakan operator like untuk pencarian nama
+        where['$user.nama$'] = { [Op.like]: `%${nama}%` }; // Gunakan operator like untuk pencarian nama
       } else if (hasDate) { // Jika ada parameter tanggalMulai atau tanggalSelesai
         const startStr = tanggalMulai || tanggalSelesai; // Ambil tanggal mulai atau selesai
         const endStr   = tanggalSelesai || tanggalMulai; // Ambil tanggal selesai atau mulai
@@ -54,7 +54,18 @@ exports.getDailyReport = async (req, res) => { // Fungsi untuk mendapatkan lapor
       }
     }
 
-    const records = await Presensi.findAll({ where, order: [["checkIn", "ASC"]] }); // Ambil data dari database dengan kondisi where dan urutkan berdasarkan checkIn
+    const records = await Presensi.findAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "nama", "email", "role"],
+        },
+      ],
+      order: [["checkIn", "ASC"]],
+    });
+
 
     res.json({ // Kirim respons JSON
       mode: filterBy || (nama ? "nama" : (tanggalMulai || tanggalSelesai) ? "tanggal" : "none"), // Mode filter yang digunakan
