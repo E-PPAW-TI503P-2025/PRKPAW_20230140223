@@ -39,33 +39,6 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col">
-      {/* Top bar */}
-      <header className="w-full px-6 py-4 flex items-center justify-between text-slate-100">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-sm font-bold">
-            PK
-          </div>
-          <div>
-            <p className="text-sm font-semibold">Presensi Karyawan</p>
-            <p className="text-xs text-slate-300">Full-Stack Attendance System</p>
-          </div>
-        </div>
-
-        <nav className="flex items-center gap-4 text-sm">
-          <Link
-            to="/login"
-            className="font-semibold text-emerald-400 border-b border-emerald-400 pb-0.5"
-          >
-            Login
-          </Link>
-          <Link
-            to="/register"
-            className="hover:text-emerald-300 transition-colors"
-          >
-            Register
-          </Link>
-        </nav>
-      </header>
 
       {/* Content */}
       <main className="flex-1 flex items-center justify-center px-4 py-8">
