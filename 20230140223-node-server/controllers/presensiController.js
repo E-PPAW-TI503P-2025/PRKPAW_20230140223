@@ -1,7 +1,6 @@
 const { Presensi, User } = require("../models");
 const { format } = require("date-fns-tz");
 const { matchedData } = require("express-validator");
-const user = require("../models/user");
 const timeZone = "Asia/Jakarta";
 
 exports.CheckIn = async (req, res) => {

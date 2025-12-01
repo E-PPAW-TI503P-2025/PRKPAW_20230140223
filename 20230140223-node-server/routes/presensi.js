@@ -5,9 +5,12 @@ const presensiController = require('../controllers/presensiController'); // Impo
 const { authenticateToken } = require('../middleware/authMiddleware'); // Import middleware untuk autentikasi JWT
 const { validatePresensiUpdate } = require('../validators/presensi'); // Import validator untuk update presensi
 // router.use(addUserData); // Gunakan middleware untuk menambahkan data user dummy
+
 router.use(authenticateToken); // Gunakan middleware untuk autentikasi JWT
+
 router.post('/check-in', presensiController.CheckIn); // Route untuk check-in
 router.post('/check-out', presensiController.CheckOut); // Route untuk check-out
 router.delete('/:id', presensiController.deletePresensi); // Route untuk menghapus data presensi berdasarkan ID
 router.put('/:id', validatePresensiUpdate, presensiController.updatePresensi); // Route untuk memperbarui data presensi dengan validasi
+
 module.exports = router; // Ekspor router untuk digunakan di file lain
