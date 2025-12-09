@@ -1,7 +1,37 @@
 const { Presensi, User } = require("../models");
 const { format } = require("date-fns-tz");
 const { matchedData } = require("express-validator");
+const multer = require("multer");
+const path = require("path");
 const timeZone = "Asia/Jakarta";
+
+// === Konfigurasi Multer untuk upload bukti foto presensi ===
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // simpan ke folder "uploads/" di root backend
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    // Nama file: userId-timestamp.ext
+    const userId = req.user?.id || "anon";
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, `${userId}-${Date.now()}${ext}`);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype && file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Hanya file gambar yang diperbolehkan!"), false);
+  }
+};
+
+// instance Multer yang akan dipakai di route
+const upload = multer({ storage, fileFilter });
+
+// export supaya bisa digunakan di routes/presensi.js
+exports.upload = upload;
 
 exports.CheckIn = async (req, res) => {
   try {
@@ -28,13 +58,22 @@ exports.CheckIn = async (req, res) => {
         .json({ message: "Anda sudah melakukan check-in hari ini." });
     }
 
-    // Simpan ke DB, termasuk latitude & longitude
+    // Jika ada file yang diupload oleh Multer
+    let buktiFoto = null;
+    if (req.file) {
+      // Simpan sebagai path relatif yang bisa langsung dipakai React:
+      // baseURL + buktiFoto
+      buktiFoto = `/uploads/${req.file.filename}`;
+    }
+
+    // Simpan ke database
     const newRecord = await Presensi.create({
       userId,
       checkIn: waktuSekarang,
       checkOut: null,
-      latitude: latitude ?? null,
-      longitude: longitude ?? null,
+      latitude: latitude || null,
+      longitude: longitude || null,
+      buktiFoto,
     });
 
     // ambil lagi beserta relasi user
@@ -55,21 +94,22 @@ exports.CheckIn = async (req, res) => {
       checkOut: null,
       latitude: withUser.latitude,
       longitude: withUser.longitude,
+      buktiFoto: withUser.buktiFoto,
       user: withUser.user,
     };
 
     console.log(
       `CHECK-IN: User ${withUser?.user?.nama ?? userId} (${userId}) @ ${
         formattedData.checkIn
-      } [lat=${formattedData.latitude}, lng=${formattedData.longitude}]`
+      } | foto: ${formattedData.buktiFoto ?? "-"}`
     );
 
     res.status(201).json({
-      message: `Halo ${userName}, check-in Anda berhasil pada pukul ${format(
-        waktuSekarang,
-        "HH:mm:ss",
-        { timeZone }
-      )} WIB`,
+      message: `Halo ${
+        userName || "User"
+      }, check-in Anda berhasil pada pukul ${format(waktuSekarang, "HH:mm:ss", {
+        timeZone,
+      })} WIB`,
       data: formattedData,
     });
   } catch (error) {
