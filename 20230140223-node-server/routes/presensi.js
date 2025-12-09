@@ -8,7 +8,12 @@ const { validatePresensiUpdate } = require('../validators/presensi'); // Import 
 
 router.use(authenticateToken); // Gunakan middleware untuk autentikasi JWT
 
-router.post('/check-in', presensiController.CheckIn); // Route untuk check-in
+// single('buktiFoto') nama field file yang dipakai di FormData React
+router.post(
+  '/check-in',
+  presensiController.upload.single('buktiFoto'),
+  presensiController.CheckIn
+); // Route untuk check-in
 router.post('/check-out', presensiController.CheckOut); // Route untuk check-out
 router.delete('/:id', presensiController.deletePresensi); // Route untuk menghapus data presensi berdasarkan ID
 router.put('/:id', validatePresensiUpdate, presensiController.updatePresensi); // Route untuk memperbarui data presensi dengan validasi

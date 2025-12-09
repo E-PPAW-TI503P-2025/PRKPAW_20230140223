@@ -9,11 +9,24 @@ function ReportPage() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [startDate, setStartDate] = useState(""); // yyyy-mm-dd
   const [endDate, setEndDate] = useState("");     // yyyy-mm-dd
 
   const navigate = useNavigate();
+
+  // helper untuk mengubah path buktiFoto jadi URL penuh
+  const getPhotoUrl = (path) => {
+    if (!path) return null;
+    // kalau path sudah full URL, langsung pakai
+    if (path.startsWith("http://") || path.startsWith("https://")) {
+      return path;
+    }
+    // default: gabungkan dengan API_BASE_URL, contoh: http://localhost:3308 + /uploads/xxx.jpg
+    return `${API_BASE_URL}${path}`;
+  };
 
   // Cek token + role admin lalu ambil data pertama kali
   useEffect(() => {
@@ -215,35 +228,64 @@ function ReportPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
                   Check-Out
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-300">
+                  Bukti Foto
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {reports.length > 0 ? (
-                reports.map((presensi) => (
-                  <tr key={presensi.id}>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-50">
-                      {presensi.user ? presensi.user.nama : "N/A"}
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-300">
-                      {presensi.checkIn
-                        ? new Date(presensi.checkIn).toLocaleString("id-ID", {
-                            timeZone: "Asia/Jakarta",
-                          })
-                        : "-"}
-                    </td>
-                    <td className="px-6 py-3 whitespace-nowrap text-slate-300">
-                      {presensi.checkOut
-                        ? new Date(presensi.checkOut).toLocaleString("id-ID", {
-                            timeZone: "Asia/Jakarta",
-                          })
-                        : "Belum Check-Out"}
-                    </td>
-                  </tr>
-                ))
+                reports.map((presensi) => {
+                  const photoUrl = getPhotoUrl(presensi.buktiFoto);
+
+                  return (
+                    <tr key={presensi.id}>
+                      <td className="px-6 py-3 whitespace-nowrap text-slate-50">
+                        {presensi.user ? presensi.user.nama : "N/A"}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap text-slate-300">
+                        {presensi.checkIn
+                          ? new Date(presensi.checkIn).toLocaleString("id-ID", {
+                              timeZone: "Asia/Jakarta",
+                            })
+                          : "-"}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap text-slate-300">
+                        {presensi.checkOut
+                          ? new Date(presensi.checkOut).toLocaleString("id-ID", {
+                              timeZone: "Asia/Jakarta",
+                            })
+                          : "Belum Check-Out"}
+                      </td>
+                      <td className="px-6 py-3 whitespace-nowrap text-slate-300">
+                        {photoUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedPhoto(photoUrl)}
+                            className="group inline-flex items-center gap-2"
+                          >
+                            <img
+                              src={photoUrl}
+                              alt="Bukti presensi"
+                              className="h-10 w-10 rounded-md object-cover border border-slate-600 group-hover:border-emerald-400"
+                            />
+                            <span className="text-xs text-emerald-300 group-hover:underline">
+                              Lihat
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-slate-500">
+                            Tidak ada bukti
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td
-                    colSpan="3"
+                    colSpan="4"
                     className="px-6 py-4 text-center text-slate-400 text-sm"
                   >
                     Tidak ada data yang ditemukan.
@@ -253,6 +295,26 @@ function ReportPage() {
             </tbody>
           </table>
         </div>
+        
+        {/* Modal tampilan foto buktiFoto */}
+        {selectedPhoto && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+            <div className="relative max-w-3xl max-h-[90vh] mx-4">
+              <button
+                type="button"
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute -top-3 -right-3 h-8 w-8 rounded-full bg-slate-900 text-slate-100 border border-slate-700 flex items-center justify-center hover:bg-slate-800"
+              >
+                ✕
+              </button>
+              <img
+                src={selectedPhoto}
+                alt="Bukti presensi penuh"
+                className="max-h-[90vh] rounded-lg shadow-xl border border-slate-700"
+              />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
