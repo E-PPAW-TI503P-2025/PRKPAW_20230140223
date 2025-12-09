@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../api";
+import Webcam from "react-webcam";
 
 // Komponen dari React Leaflet
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -35,6 +36,10 @@ function PresensiPage() {
   const [coords, setCoords] = useState(null); // { lat, lng }
   const [locStatus, setLocStatus] = useState("idle"); 
   // idle | pending | ok | error | unsupported
+
+  // ====== STATE UNTUK KAMERA / SELFIE ======
+  const [image, setImage] = useState(null); // dataURL selfie
+  const webcamRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -100,7 +105,21 @@ function PresensiPage() {
     return { Authorization: `Bearer ${token}` };
   };
 
-  // ====== HANDLE CHECK-IN (KIRIM LOKASI) ======
+  // ====== FUNGSI AMBIL FOTO DARI KAMERA ======
+  const capture = useCallback(() => {
+    setError(null);
+    if (!webcamRef.current) return;
+
+    const imageSrc = webcamRef.current.getScreenshot();
+    if (!imageSrc) {
+      setError("Gagal mengambil gambar dari kamera.");
+      return;
+    }
+
+    setImage(imageSrc);
+  }, []);
+
+  // ====== HANDLE CHECK-IN (LOKASI + FOTO) ======
   const handleCheckIn = async () => {
     setError(null);
     setMessage(null);
@@ -113,22 +132,37 @@ function PresensiPage() {
       return;
     }
 
+    // Pastikan sudah ada foto selfie
+    if (!image) {
+      setError("Silakan ambil foto selfie terlebih dahulu.");
+      return;
+    }
+
     try {
       setLoading(true);
 
+      // Ubah dataURL (base64) → Blob
+      const blob = await (await fetch(image)).blob();
+
+      // Buat FormData untuk dikirim ke backend
+      const formData = new FormData();
+      formData.append("latitude", coords.lat);
+      formData.append("longitude", coords.lng);
+      // nama field HARUS sama dengan upload.single('buktiFoto') di backend
+      formData.append("buktiFoto", blob, "selfie.jpg");
+
       const res = await axios.post(
         `${API_BASE_URL}/api/presensi/check-in`,
+        formData,
         {
-          latitude: coords.lat,
-          longitude: coords.lng,
-        },
-        {
-          headers: getAuthHeader(),
+          headers: getAuthHeader(), // hanya Authorization, biarkan axios set Content-Type sendiri
         }
       );
 
       setMessage(res.data?.message || "Check-in berhasil.");
       setLastRecord(res.data?.data || null);
+      // Optional: kalau mau reset foto setelah check-in
+      // setImage(null);
     } catch (err) {
       console.error("CheckIn error:", err);
       setLastRecord(null);
@@ -187,7 +221,7 @@ function PresensiPage() {
         <h1 className="text-3xl font-bold mb-2">Presensi</h1>
         <p className="text-sm text-slate-400 mb-4">
           Lakukan check-in dan check-out presensi yang terintegrasi dengan
-          backend Node.js. Lokasi akan direkam menggunakan Geolocation API.
+          backend Node.js. Lokasi akan direkam menggunakan Geolocation API dan selfie digunakan sebagai bukti kehadiran.
         </p>
 
         {/* ====== PETA (OSM) DI ATAS KARTU ====== */}
@@ -247,6 +281,46 @@ function PresensiPage() {
                   {error}
                 </div>
               )}
+            </div>
+
+            {/* Kamera / Selfie */}
+            <div className="mt-5">
+              <p className="text-xs font-semibold text-slate-300 mb-1">
+                Selfie sebagai bukti kehadiran
+              </p>
+              <div className="my-2 border border-slate-800 rounded-xl overflow-hidden bg-black">
+                {image ? (
+                  <img src={image} alt="Selfie" className="w-full" />
+                ) : (
+                  <Webcam
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
+                    className="w-full"
+                    videoConstraints={{ facingMode: "user" }}
+                  />
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                {!image ? (
+                  <button
+                    type="button"
+                    onClick={capture}
+                    className="flex-1 bg-blue-500 hover:bg-blue-400 text-sm font-semibold text-slate-50 px-4 py-2.5 rounded-lg transition-colors"
+                  >
+                    Ambil Foto 📸
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setImage(null)}
+                    className="flex-1 bg-slate-600 hover:bg-slate-500 text-sm font-semibold text-slate-50 px-4 py-2.5 rounded-lg transition-colors"
+                  >
+                    Foto Ulang 🔁
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Tombol aksi */}
@@ -346,6 +420,10 @@ function PresensiPage() {
                     presensis
                   </code>
                   .
+                </li>
+                <li>
+                  Saat check-in, koordinat <code>latitude / longitude</code> dan path
+                  <code>buktiFoto</code> (selfie) disimpan di tabel <code>presensis</code>.
                 </li>
               </ul>
             </div>
