@@ -1,22 +1,16 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
-    /**
-     * Add altering commands here.
-     *
-     * Example:
-     * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
-     */
+  async up(queryInterface, Sequelize) {
+    // Tambah kolom buktiFoto ke tabel Presensis
+    await queryInterface.addColumn('Presensis', 'buktiFoto', {
+      type: Sequelize.STRING,      // simpan path/nama file
+      allowNull: true,             // boleh null (kalau user belum/ga selfie)
+    });
   },
 
-  async down (queryInterface, Sequelize) {
-    /**
-     * Add reverting commands here.
-     *
-     * Example:
-     * await queryInterface.dropTable('users');
-     */
-  }
+  async down(queryInterface, Sequelize) {
+    // Rollback: hapus lagi kolom buktiFoto
+    await queryInterface.removeColumn('Presensis', 'buktiFoto');
+  },
 };
